@@ -18,6 +18,7 @@ namespace dxvk {
         [[nodiscard]] VkDriverIdKHR GetDriverId() const;
         [[nodiscard]] uint32_t GetDriverVersion() const;
         [[nodiscard]] uint32_t GetDeviceId() const;
+        [[nodiscard]] uint32_t GetSubsystemId() const;
         [[nodiscard]] uint32_t GetGpuType() const;
         [[nodiscard]] uint32_t GetBusId() const;
         [[nodiscard]] uint32_t GetVRamSize() const;
@@ -35,5 +36,9 @@ namespace dxvk {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR m_deviceFragmentShadingRateProperties{};
         uint32_t m_vkDriverVersion{};
         std::set<std::string> m_deviceExtensions{};
+
+        uint32_t m_driverVersionOverride{};
+        uint32_t m_deviceIdOverride{};
+        uint32_t m_subsystemIdOverride{};
     };
 }

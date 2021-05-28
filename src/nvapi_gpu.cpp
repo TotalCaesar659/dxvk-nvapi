@@ -37,7 +37,7 @@ extern "C" {
             return ExpectedPhysicalGpuHandle(n);
 
         *pDeviceId = adapter->GetDeviceId();
-        *pSubSystemId = 0;
+        *pSubSystemId = adapter->GetSubsystemId();
         *pRevisionId = 0;
         *pExtDeviceId = 0;
 

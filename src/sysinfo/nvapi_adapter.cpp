@@ -1,9 +1,14 @@
 #include "nvapi_adapter.h"
 #include "../dxvk/dxvk_interfaces.h"
 #include "../util/util_string.h"
+#include "../util/util_env.h"
 #include "../util/util_log.h"
 
 namespace dxvk {
+    constexpr auto deviceIdEnvName = "DXVK_NVAPI_DEVICE_ID"; // export DXVK_NVAPI_DEVICE_ID=461377758 // 1b80-10de
+    constexpr auto subsystemIdEnvName = "DXVK_NVAPI_SUBSYSTEM_ID"; // export DXVK_NVAPI_SUBSYSTEM_ID=920589400 // 36df-1458
+    constexpr auto driverVersionEnvName = "DXVK_NVAPI_DRIVER_VERSION"; // export DXVK_NVAPI_DRIVER_VERSION=45589 // 455.89
+
     NvapiAdapter::NvapiAdapter() = default;
 
     NvapiAdapter::~NvapiAdapter() = default;
@@ -121,6 +126,27 @@ namespace dxvk {
         }
 
         FreeLibrary(vkModule);
+
+        auto deviceId = env::getEnvVariable(deviceIdEnvName);
+        if (!deviceId.empty()) {
+//            log::write(str::format(deviceIdEnvName, " is set, reporting device ID 0x", std::hex, deviceId, " instead of 0x", GetDeviceId()));
+            std::cout << deviceIdEnvName << " is set, reporting device ID 0x" << std::hex << stoul(deviceId)  << " instead of 0x" << std::hex << GetDeviceId() << std::endl;
+            m_deviceIdOverride = stoul(deviceId);
+        }
+
+        auto subsystemId = env::getEnvVariable(subsystemIdEnvName);
+        if (!subsystemId.empty()) {
+//            log::write(str::format(subsystemIdEnvName, " is set, reporting sub system ID 0x", std::hex, subsystemId, " instead of 0x", GetSubsystemId()));
+            std::cout << subsystemIdEnvName << " is set, reporting sub system ID 0x" << std::hex << stoul(subsystemId)  << " instead of 0x" << std::hex << GetSubsystemId() << std::endl;
+            m_subsystemIdOverride = stoul(subsystemId);
+        }
+
+        auto driverVersion = env::getEnvVariable(driverVersionEnvName);
+        if (!driverVersion.empty()) {
+            log::write(str::format(driverVersionEnvName, " is set, reporting driver version ", driverVersion, " instead of ", GetDriverVersion()));
+            m_driverVersionOverride = stoul(driverVersion);
+        }
+
         return true;
     }
 
@@ -131,8 +157,10 @@ namespace dxvk {
     uint32_t NvapiAdapter::GetDriverVersion() const {
         // Windows releases can only ever have a two digit minor version
         // and does not have a patch number
-        return VK_VERSION_MAJOR(m_vkDriverVersion) * 100 +
-            std::min(VK_VERSION_MINOR(m_vkDriverVersion), (uint32_t) 99);
+        return m_driverVersionOverride > 0
+            ? m_driverVersionOverride
+            : VK_VERSION_MAJOR(m_vkDriverVersion) * 100 +
+                std::min(VK_VERSION_MINOR(m_vkDriverVersion), (uint32_t) 99);
     }
 
     VkDriverIdKHR NvapiAdapter::GetDriverId() const {
@@ -140,7 +168,11 @@ namespace dxvk {
     }
 
     uint32_t NvapiAdapter::GetDeviceId() const {
-        return (m_deviceProperties.deviceID << 16) + m_deviceProperties.vendorID;
+        return m_deviceIdOverride > 0 ? m_deviceIdOverride : (m_deviceProperties.deviceID << 16) + m_deviceProperties.vendorID;
+    }
+
+    uint32_t NvapiAdapter::GetSubsystemId() const {
+        return m_subsystemIdOverride;
     }
 
     uint32_t NvapiAdapter::GetGpuType() const {
